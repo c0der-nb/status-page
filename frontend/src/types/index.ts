@@ -21,17 +21,21 @@ export interface Team {
   name: string;
   description: string;
   organization_id: string;
-  members_count?: number;
+  member_count?: number;
   services_count?: number;
   created_at: string;
+  members?: TeamMember[];
 }
 
 export interface TeamMember {
   id: string;
-  email: string;
-  username: string;
-  first_name: string;
-  last_name: string;
+  user_id: string;
+  user_email?: string;
+  user_name?: string;
+  email?: string;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
   role: string;
   joined_at?: string;
 }
