@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5007/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5010/api';
 
 class ApiClient {
   private client: AxiosInstance;
@@ -94,6 +94,11 @@ class ApiClient {
     return response.data;
   }
 
+  async getOrganizationUsers(orgId: string) {
+    const response = await this.client.get(`/organizations/${orgId}/users`);
+    return response.data;
+  }
+
   async getOrganization(id: string) {
     const response = await this.client.get(`/organizations/${id}`);
     return response.data;
@@ -155,8 +160,13 @@ class ApiClient {
     return response.data;
   }
 
-  async addTeamMember(teamId: string, userId: string, role: string) {
-    const response = await this.client.post(`/teams/${teamId}/members`, { user_id: userId, role });
+  async getTeamMembers(teamId: string) {
+    const response = await this.client.get(`/teams/${teamId}/members`);
+    return response.data;
+  }
+
+  async addTeamMember(teamId: string, data: { user_id: string; role: string }) {
+    const response = await this.client.post(`/teams/${teamId}/members`, data);
     return response.data;
   }
 
