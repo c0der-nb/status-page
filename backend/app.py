@@ -29,8 +29,27 @@ def create_app():
     
     # Configuration
     # Use SQLite for development, PostgreSQL for production
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///statuspage.db')
+    database_url = os.getenv('DATABASE_URL', 'sqlite:///statuspage.db')
+    
+    # Fix for Render PostgreSQL SSL issues
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql://', 1)
+    
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    
+    # Add connection pool settings for production
+    if 'postgresql' in database_url:
+        app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+            'pool_pre_ping': True,  # Verify connections before using
+            'pool_recycle': 300,    # Recycle connections after 5 minutes
+            'pool_size': 10,        # Number of connections to maintain
+            'max_overflow': 20,     # Maximum overflow connections
+            'connect_args': {
+                'sslmode': 'require',  # Require SSL for PostgreSQL
+                'connect_timeout': 10,
+            }
+        }
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
     app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET_KEY', 'jwt-secret-key-change-in-production')
     app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=24)
@@ -41,6 +60,11 @@ def create_app():
     db.init_app(app)
     migrate.init_app(app, db)
     jwt = JWTManager(app)
+    
+    # Configure CORS for production
+    frontend_url = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+    CORS(app, origins=[frontend_url, 'http://localhost:3000', 'https://status-page-self.vercel.app'], 
+         supports_credentials=True)
     
     # JWT error handlers to ensure CORS headers are included
     @jwt.expired_token_loader
@@ -138,4 +162,4 @@ def create_app():
 app = create_app()
 
 if __name__ == '__main__':
-    socketio.run(app, debug=False, port=5008, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=False, port=5010, allow_unsafe_werkzeug=True)
